@@ -29,7 +29,9 @@ const WINDOWS_RESERVED_NAMES = new Set([
  * 4. Ensures filename is not empty
  */
 export function sanitizeFilename(rawFilename: string): string {
-  const base = path.basename(rawFilename);
+  // win32.basename splits on both `/` and `\`, so Windows-style client paths are
+  // stripped even when the backend runs on POSIX.
+  const base = path.win32.basename(rawFilename);
   // Keep only [A-Za-z0-9._-]
   let sanitized = base.replace(/[^A-Za-z0-9._-]/g, '_');
 

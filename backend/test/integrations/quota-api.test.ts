@@ -292,6 +292,8 @@ describe('Quota API Integration & Pure Parser', () => {
       } as unknown as CredentialStore;
 
       oauthClientManager = new OAuthClientManager({
+        binaryPath: '/fake/agy',
+        readBinary: () => '',
         scanner: () => ({
           clientId: mockAud,
           clientSecrets: [mockSecret1, mockSecret2],

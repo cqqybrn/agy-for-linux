@@ -8,6 +8,7 @@ import { ModelService } from '../../src/services/model.js';
 import type { ModelCatalogPort } from '../../src/services/ports/model-catalog.port.js';
 import { modelsRoutes } from '../../src/routes/http/models.routes.js';
 import { AppError } from '../../src/utils/errors.js';
+import { SUPPLEMENTAL_MODELS } from '../../src/services/supplemental-models.js';
 
 describe('Models HTTP Routes', () => {
   let app: FastifyInstance;
@@ -66,11 +67,13 @@ describe('Models HTTP Routes', () => {
 
     expect(res.statusCode).toBe(200);
     const body: Model[] = JSON.parse(res.body);
-    expect(body).toHaveLength(2);
-    expect(body[0].id).toBe('gemini-3.8-flash-high');
-    expect(body[0].isDefault).toBe(true);
-    expect(body[1].id).toBe('claude-sonnet-4-6');
-    expect(body[1].isDefault).toBe(false);
+    // Studio also surfaces supplemental (Ultra-only) models; assert on the live ones.
+    const supplementalIds = new Set(SUPPLEMENTAL_MODELS.map((m) => m.id));
+    const live = body.filter((m) => !supplementalIds.has(m.id));
+    expect(live.map((m) => m.id)).toEqual(['gemini-3.8-flash-high', 'claude-sonnet-4-6']);
+    expect(live[0].isDefault).toBe(true);
+    expect(live[1].isDefault).toBe(false);
+    expect(body.filter((m) => m.isDefault)).toHaveLength(1);
   });
 
   it('GET /api/models?refresh=true triggers refresh', async () => {

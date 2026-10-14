@@ -7,8 +7,13 @@ import type { AgentMode, Model } from '@agy-studio/contracts';
 import { createDatabase, PrefsRepository } from '../../src/repositories/index.js';
 import { PrefsService } from '../../src/services/prefs.js';
 import { ModelService } from '../../src/services/model.js';
+import { SUPPLEMENTAL_MODELS } from '../../src/services/supplemental-models.js';
 import type { ModelCatalogPort } from '../../src/services/ports/model-catalog.port.js';
 import { AppError } from '../../src/utils/errors.js';
+
+const supplementalIds = new Set(SUPPLEMENTAL_MODELS.map((m) => m.id));
+/** Ids that came from the catalog / cache, ignoring Studio's supplemental (e.g. Ultra-only Argon) rows. */
+const liveIds = (models: Model[]) => models.map((m) => m.id).filter((id) => !supplementalIds.has(id));
 
 describe('ModelService', () => {
   let db: Database.Database;
@@ -126,7 +131,7 @@ describe('ModelService', () => {
     expect(models[1].isDefault).toBe(false);
   });
 
-  it('isDefault 关联：模型列表为空时安全返回空数组', async () => {
+  it('目录为空时只剩补充模型（Argon），且恰有一个 isDefault', async () => {
     mockCatalogPort.listModels = vi.fn().mockResolvedValue([]);
 
     const modelService = new ModelService({
@@ -135,7 +140,39 @@ describe('ModelService', () => {
     });
 
     const models = await modelService.listModels();
-    expect(models).toEqual([]);
+    expect(models.map((m) => m.id)).toEqual(SUPPLEMENTAL_MODELS.map((m) => m.id));
+    expect(models.filter((m) => m.isDefault)).toHaveLength(1);
+  });
+
+  it('补充模型（Gemini 4 Argon）出现在列表里，但不抢占真实 gemini 的默认位置', async () => {
+    const modelService = new ModelService({
+      catalogPort: mockCatalogPort,
+      prefsService,
+    });
+
+    const models = await modelService.listModels();
+    for (const id of supplementalIds) {
+      expect(models.some((m) => m.id === id)).toBe(true);
+    }
+    expect(models.find((m) => m.isDefault)?.id).toBe('gemini-3.8-flash-high');
+  });
+
+  it('目录已列出同 id 的 Argon 时，以目录里的为准，不重复', async () => {
+    const live: Model[] = [
+      { id: 'gemini-4-argon-high', label: 'Argon (live)', group: 'gemini', isDefault: false },
+      ...mockModels,
+    ];
+    mockCatalogPort.listModels = vi.fn().mockResolvedValue(live);
+
+    const modelService = new ModelService({
+      catalogPort: mockCatalogPort,
+      prefsService,
+    });
+
+    const models = await modelService.listModels();
+    const argonHigh = models.filter((m) => m.id === 'gemini-4-argon-high');
+    expect(argonHigh).toHaveLength(1);
+    expect(argonHigh[0].label).toBe('Argon (live)');
   });
 
   it('若 catalogPort 抛出或检测到 agy 未安装，向上抛出 AppError(AGY_NOT_INSTALLED)', async () => {
@@ -189,7 +226,7 @@ describe('ModelService', () => {
 
     const models = await modelService.listModels();
     expect(mockCatalogPort.listModels).not.toHaveBeenCalled();
-    expect(models.map((m) => m.id)).toEqual(mockModels.map((m) => m.id));
+    expect(liveIds(models)).toEqual(mockModels.map((m) => m.id));
   });
 
   it('刷新前调用 ensureCredentials，再拉取模型列表', async () => {
@@ -204,6 +241,6 @@ describe('ModelService', () => {
     const models = await modelService.listModels();
     expect(ensureCredentials).toHaveBeenCalledTimes(1);
     expect(mockCatalogPort.listModels).toHaveBeenCalledTimes(1);
-    expect(models.map((m) => m.id)).toEqual(mockModels.map((m) => m.id));
+    expect(liveIds(models)).toEqual(mockModels.map((m) => m.id));
   });
 });

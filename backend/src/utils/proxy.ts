@@ -114,7 +114,7 @@ export function parseProxyServer(raw: string | undefined): {
     if (target) byProto[proto] = target;
   }
   const httpProxy = byProto['http'];
-  const httpsProxy = byProto['https'] ?? httpProxy;
+  const httpsProxy = byProto['https'];
   return {
     ...(httpProxy ? { httpProxy } : {}),
     ...(httpsProxy ? { httpsProxy } : {}),
