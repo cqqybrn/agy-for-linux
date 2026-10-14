@@ -1,0 +1,26 @@
+{
+  "scenario": "command-exec",
+  "agyVersion": "1.2.12",
+  "recordedAt": "2026-09-28T08:29:30.167Z",
+  "durationMs": 16325,
+  "exitCode": 0,
+  "exitSignal": null,
+  "command": {
+    "bin": "agy",
+    "argv": [
+      "--input-format",
+      "stream-json",
+      "--output-format",
+      "stream-json",
+      "--dangerously-skip-permissions"
+    ],
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "options": {
+    "scenario": "command-exec",
+    "prompt": "执行命令 git --version 并告诉我结果",
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "turnsCount": 1,
+  "aborted": false
+}

@@ -1,0 +1,26 @@
+{
+  "scenario": "multi-turn",
+  "agyVersion": "1.2.12",
+  "recordedAt": "2026-09-28T08:31:18.797Z",
+  "durationMs": 13794,
+  "exitCode": 0,
+  "exitSignal": null,
+  "command": {
+    "bin": "agy",
+    "argv": [
+      "--input-format",
+      "stream-json",
+      "--output-format",
+      "stream-json",
+      "--dangerously-skip-permissions"
+    ],
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "options": {
+    "scenario": "multi-turn",
+    "cwd": "G:\\agy-rec-sandbox",
+    "turnsFile": "G:\\agy-rec-sandbox\\multi-turn.txt"
+  },
+  "turnsCount": 2,
+  "aborted": false
+}

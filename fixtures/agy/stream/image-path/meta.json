@@ -1,0 +1,26 @@
+{
+  "scenario": "image-path",
+  "agyVersion": "1.2.12",
+  "recordedAt": "2026-09-28T08:30:34.151Z",
+  "durationMs": 16420,
+  "exitCode": 0,
+  "exitSignal": null,
+  "command": {
+    "bin": "agy",
+    "argv": [
+      "--input-format",
+      "stream-json",
+      "--output-format",
+      "stream-json",
+      "--dangerously-skip-permissions"
+    ],
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "options": {
+    "scenario": "image-path",
+    "prompt": "请查看这张图片并描述其内容：docs/example.png",
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "turnsCount": 1,
+  "aborted": false
+}

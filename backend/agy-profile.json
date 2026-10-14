@@ -1,0 +1,110 @@
+{
+  "agyVersion": "1.2.12",
+  "discoveredAt": "2026-09-28T00:00:00.000Z",
+  "binary": {
+    "candidates": [
+      "agy",
+      "%HOME%/.local/bin/agy",
+      "%HOME%/.antigravity/bin/agy",
+      "/opt/homebrew/bin/agy",
+      "/usr/local/bin/agy",
+      "/Applications/Antigravity.app/Contents/Resources/app/bin/agy",
+      "/Applications/Antigravity.app/Contents/Resources/bin/agy",
+      "/opt/antigravity/resources/bin/agy",
+      "/usr/share/antigravity/resources/bin/agy",
+      "agy.exe",
+      "%LOCALAPPDATA%\\agy\\bin\\agy.exe"
+    ]
+  },
+  "stream": {
+    "userFrameTemplate": "{\"event\":\"user\",\"message\":{\"content\":\"{{prompt}}\"}}",
+    "multiTurnStdin": false,
+    "eventTypeMap": {
+      "init": "init",
+      "step_update": "step_update",
+      "result": "result"
+    },
+    "permissionEvent": null,
+    "imageInput": {
+      "supported": false,
+      "template": null
+    }
+  },
+  "paths": {
+    "dataRoots": [
+      "%USERPROFILE%\\.gemini\\antigravity-cli",
+      "%USERPROFILE%\\.gemini\\antigravity"
+    ],
+    "conversationDirPattern": "%USERPROFILE%\\.gemini\\antigravity-cli\\brain\\{{conversationId}}",
+    "transcriptRelPath": ".system_generated\\logs\\transcript.jsonl"
+  },
+  "transcript": {
+    "taskResultPattern": "Task id \"[^\"]*/task-(?<step>\\d+)\" finished with result:\\s*(?:The command exited with code (?<exitCode>-?\\d+)\\.)?\\s*(?:Output:)?[ \\t]*\\r?\\n?(?<output>[\\s\\S]*?)\\s*(?:Log: |</SYSTEM_MESSAGE>|$)"
+  },
+  "settings": {
+    "files": [
+      {
+        "scope": "user",
+        "pathTemplate": "%USERPROFILE%\\.gemini\\antigravity-cli\\settings.json"
+      }
+    ],
+    "alwaysProceed": {
+      "jsonPath": "toolPermission",
+      "value": "always-proceed"
+    },
+    "statusline": {
+      "jsonPath": "statusline"
+    }
+  },
+  "credentials": {
+    "preferredIsolation": "isolated_home",
+    "homeEnvVars": [
+      "USERPROFILE",
+      "HOME",
+      "APPDATA",
+      "LOCALAPPDATA"
+    ],
+    "wincredTargetPatterns": [
+      "gemini:antigravity"
+    ],
+    "credentialFiles": []
+  },
+  "login": {
+    "argv": [],
+    "authUrlPattern": "https?://[^\\s]+",
+    "successPatterns": [
+      "Logged in as",
+      "Authentication successful",
+      "Welcome"
+    ],
+    "failurePatterns": [
+      "Authentication failed",
+      "Login cancelled",
+      "Error: "
+    ]
+  },
+  "quota": {
+    "statuslineInHeadless": false,
+    "usageCommand": "/usage",
+    "creditsCommand": "/credits",
+    "usageParser": "text-v1",
+    "tokenUrl": "https://oauth2.googleapis.com/token",
+    "loadCodeAssistUrl": "https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+    "quotaSummaryUrl": "https://daily-cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary",
+    "ideType": "ANTIGRAVITY",
+    "userAgentTemplate": "antigravity/{{version}} {{platform}}/{{arch}}"
+  },
+  "catalog": {
+    "versionArgv": [
+      "--version"
+    ],
+    "modelsArgv": [
+      "models"
+    ],
+    "modelsParser": "text-v1",
+    "modes": [
+      "accept-edits",
+      "plan"
+    ]
+  }
+}

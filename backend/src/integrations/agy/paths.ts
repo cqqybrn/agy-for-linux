@@ -1,0 +1,209 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { AppError } from '../../utils/errors.js';
+import { loadProfile } from './profile/loader.js';
+import type { PathsConfig } from './profile/schema.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const CONVERSATION_ID_TOKEN = '{{conversationId}}';
+
+const CONVERSATION_DB_DIR = 'conversations';
+const CONVERSATION_DB_SUFFIXES = ['.db', '.db-shm', '.db-wal'];
+
+const WORKSPACE_AGENTS_REL = path.join('.agents', 'agents');
+const GLOBAL_AGENTS_TEMPLATE = '%USERPROFILE%\\.gemini\\config\\agents';
+
+export interface PathResolveOptions {
+  /** An already expanded data root (one of profile.paths.dataRoots). */
+  dataRoot?: string;
+  /** Account home used in place of %USERPROFILE% (isolated_home mode). */
+  homeDir?: string;
+}
+
+export function getDefaultPaths(): PathsConfig {
+  const candidates = [
+    path.resolve(__dirname, '../../../agy-profile.json'),
+    path.resolve(process.cwd(), 'backend/agy-profile.json'),
+    path.resolve(process.cwd(), 'agy-profile.json'),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return loadProfile(candidate).paths;
+    }
+  }
+  throw new AppError('NOT_FOUND', 'Unable to locate agy-profile.json');
+}
+
+/**
+ * Expands %ENV_VAR% tokens and leading `~/` in path strings, normalizing Windows backslashes
+ * to forward slashes on Linux and macOS so `path.resolve` does not treat `\` as a filename character.
+ */
+export function expandPathTokens(template: string, envOverrides?: Record<string, string>): string {
+  let expanded = template.replace(/%([^%]+)%/g, (_, varName: string) => {
+    if (envOverrides && envOverrides[varName] !== undefined) {
+      return envOverrides[varName];
+    }
+    if (process.env[varName] !== undefined) {
+      return process.env[varName]!;
+    }
+    if (varName === 'USERPROFILE' || varName === 'HOME') {
+      return process.env.USERPROFILE || process.env.HOME || os.homedir();
+    }
+    if (varName === 'LOCALAPPDATA') {
+      const home = process.env.USERPROFILE || process.env.HOME || os.homedir();
+      if (process.platform === 'darwin') {
+        return process.env.LOCALAPPDATA || path.join(home, 'Library', 'Application Support');
+      }
+      if (process.platform !== 'win32') {
+        return process.env.LOCALAPPDATA || process.env.XDG_DATA_HOME || path.join(home, '.local', 'share');
+      }
+      return process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
+    }
+    if (varName === 'APPDATA') {
+      const home = process.env.USERPROFILE || process.env.HOME || os.homedir();
+      if (process.platform === 'darwin') {
+        return process.env.APPDATA || path.join(home, 'Library', 'Application Support');
+      }
+      if (process.platform !== 'win32') {
+        return process.env.APPDATA || process.env.XDG_CONFIG_HOME || path.join(home, '.config');
+      }
+      return process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
+    }
+    return '';
+  });
+
+  if (expanded === '~') {
+    expanded = os.homedir();
+  } else if (expanded.startsWith('~/') || expanded.startsWith('~\\')) {
+    expanded = path.join(os.homedir(), expanded.slice(2));
+  }
+
+  if (process.platform !== 'win32') {
+    expanded = expanded.replace(/\\/g, '/');
+  }
+
+  return expanded;
+}
+
+/**
+ * Environment overrides that relocate %USERPROFILE%-style tokens to an account home.
+ */
+export function homeEnvOverrides(homeDir: string): Record<string, string> {
+  return {
+    USERPROFILE: homeDir,
+    HOME: homeDir,
+    LOCALAPPDATA: path.join(homeDir, 'AppData', 'Local'),
+    APPDATA: path.join(homeDir, 'AppData', 'Roaming'),
+  };
+}
+
+function joinRel(base: string, relPath: string): string {
+  return path.join(base, ...relPath.split(/[\\/]+/).filter((p) => p.length > 0));
+}
+
+/**
+ * Expands profile.paths.dataRoots, optionally relative to an account home.
+ */
+export function resolveDataRoots(paths: PathsConfig, homeDir?: string): string[] {
+  const overrides = homeDir ? homeEnvOverrides(homeDir) : undefined;
+  return paths.dataRoots.map((root) => path.resolve(expandPathTokens(root, overrides)));
+}
+
+/**
+ * conversationDirPattern relative to dataRoots[0], e.g. "brain/{{conversationId}}".
+ */
+function conversationDirRelPattern(paths: PathsConfig): string {
+  const pattern = paths.conversationDirPattern.replace(/\\/g, '/');
+  const root = paths.dataRoots[0].replace(/\\/g, '/').replace(/\/+$/, '');
+  if (!pattern.toLowerCase().startsWith(root.toLowerCase() + '/')) {
+    throw new AppError(
+      'BAD_REQUEST',
+      `conversationDirPattern "${paths.conversationDirPattern}" is not located under dataRoots[0] "${paths.dataRoots[0]}"`,
+    );
+  }
+  const rel = pattern.slice(root.length + 1);
+  if (path.posix.basename(rel) !== CONVERSATION_ID_TOKEN) {
+    throw new AppError(
+      'BAD_REQUEST',
+      `conversationDirPattern "${paths.conversationDirPattern}" must end with ${CONVERSATION_ID_TOKEN}`,
+    );
+  }
+  return rel;
+}
+
+/**
+ * Directory, relative to a data root, holding one sub-directory per conversation (e.g. "brain").
+ */
+export function conversationsParentRel(paths: PathsConfig): string {
+  return path.posix.dirname(conversationDirRelPattern(paths));
+}
+
+/**
+ * Candidate directories for a conversation: the given data root only, or one per profile data root
+ * in profile order (agy CLI root first).
+ */
+export function resolveConversationDirCandidates(
+  conversationId: string,
+  options: PathResolveOptions | undefined,
+  paths: PathsConfig,
+): string[] {
+  const rel = conversationDirRelPattern(paths).replace(CONVERSATION_ID_TOKEN, conversationId);
+  if (options?.dataRoot) {
+    return [joinRel(options.dataRoot, rel)];
+  }
+  return resolveDataRoots(paths, options?.homeDir).map((root) => joinRel(root, rel));
+}
+
+/**
+ * Resolves the directory for a specific conversation ID: the first data root where it exists,
+ * otherwise the first data root (the agy CLI root, where new conversations are written).
+ */
+export function resolveConversationDir(
+  conversationId: string,
+  options: PathResolveOptions | undefined,
+  paths: PathsConfig,
+): string {
+  const candidates = resolveConversationDirCandidates(conversationId, options, paths);
+  return candidates.find((dir) => fs.existsSync(dir)) ?? candidates[0];
+}
+
+/**
+ * Per-conversation SQLite files under <dataRoot>\conversations: <id>.db and its -shm/-wal sidecars.
+ */
+export function resolveConversationDbPaths(conversationId: string, dataRoot: string): string[] {
+  return CONVERSATION_DB_SUFFIXES.map((suffix) =>
+    path.join(dataRoot, CONVERSATION_DB_DIR, `${conversationId}${suffix}`),
+  );
+}
+
+/**
+ * Directories holding one `<dir>/agent.md` per custom agent: the workspace's `.agents\agents`
+ * (when a workspace is given) and `%USERPROFILE%\.gemini\config\agents`.
+ */
+export function resolveAgentRoots(
+  workspaceDir: string | null | undefined,
+  homeDir?: string,
+): Array<{ root: string; scope: 'workspace' | 'global' }> {
+  const roots: Array<{ root: string; scope: 'workspace' | 'global' }> = [];
+  if (workspaceDir) {
+    roots.push({ root: path.join(path.resolve(workspaceDir), WORKSPACE_AGENTS_REL), scope: 'workspace' });
+  }
+  const overrides = homeDir ? homeEnvOverrides(homeDir) : undefined;
+  roots.push({ root: path.resolve(expandPathTokens(GLOBAL_AGENTS_TEMPLATE, overrides)), scope: 'global' });
+  return roots;
+}
+
+/**
+ * Resolves the absolute path to a conversation's transcript file.
+ */
+export function resolveTranscriptPath(
+  conversationId: string,
+  options: PathResolveOptions | undefined,
+  paths: PathsConfig,
+): string {
+  return joinRel(resolveConversationDir(conversationId, options, paths), paths.transcriptRelPath);
+}

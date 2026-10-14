@@ -1,0 +1,26 @@
+{
+  "scenario": "file-ops",
+  "agyVersion": "1.2.12",
+  "recordedAt": "2026-09-28T08:29:12.960Z",
+  "durationMs": 21056,
+  "exitCode": 0,
+  "exitSignal": null,
+  "command": {
+    "bin": "agy",
+    "argv": [
+      "--input-format",
+      "stream-json",
+      "--output-format",
+      "stream-json",
+      "--dangerously-skip-permissions"
+    ],
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "options": {
+    "scenario": "file-ops",
+    "prompt": "在当前目录下创建一个 test-hello.txt 文件，写入 'hello agy'，读取其内容，然后将该文件删除",
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "turnsCount": 1,
+  "aborted": false
+}

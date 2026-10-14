@@ -1,0 +1,26 @@
+{
+  "scenario": "simple-chat",
+  "agyVersion": "1.2.12",
+  "recordedAt": "2026-09-28T08:27:57.087Z",
+  "durationMs": 13683,
+  "exitCode": 0,
+  "exitSignal": null,
+  "command": {
+    "bin": "agy",
+    "argv": [
+      "--input-format",
+      "stream-json",
+      "--output-format",
+      "stream-json",
+      "--dangerously-skip-permissions"
+    ],
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "options": {
+    "scenario": "simple-chat",
+    "prompt": "你好，请用一句话介绍你自己",
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "turnsCount": 1,
+  "aborted": false
+}

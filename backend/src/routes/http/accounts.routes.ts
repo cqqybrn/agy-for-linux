@@ -1,0 +1,194 @@
+import type { FastifyPluginAsync } from 'fastify';
+import { z } from 'zod';
+import type { AccountService } from '../../services/account/account.js';
+import { AppError } from '../../utils/errors.js';
+
+export interface AccountsRoutesOptions {
+  accountService: AccountService;
+}
+
+const SaveAccountSchema = z.object({
+  name: z.string().min(1, 'Account name is required'),
+  note: z.string().optional(),
+  type: z.enum(['oauth', 'apikey']).optional(),
+  apiKey: z.string().optional(),
+});
+
+const SwitchAccountSchema = z.object({
+  name: z.string().min(1, 'Account name is required'),
+});
+
+const SubmitLoginCodeSchema = z.object({
+  code: z.string().min(1, 'code is required').max(2048),
+});
+
+const StartLoginSchema = z.object({
+  saveAs: z.string().min(1, 'saveAs is required'),
+});
+
+export const accountsRoutes: FastifyPluginAsync<AccountsRoutesOptions> = async (
+  app,
+  options,
+) => {
+  const { accountService } = options;
+
+  app.setErrorHandler((error, _request, reply) => {
+    const appError = AppError.from(error);
+    reply.status(appError.status).send(appError.toApiErrorResponse());
+  });
+
+  // GET /api/accounts
+  app.get('/api/accounts', async () => {
+    const [accounts, whoami] = await Promise.all([
+      accountService.listAccounts(),
+      accountService.whoami(),
+    ]);
+    return { accounts, whoami };
+  });
+
+  // POST /api/accounts/login
+  app.post('/api/accounts/login', async (request, reply) => {
+    const parsed = StartLoginSchema.safeParse(request.body);
+    if (!parsed.success) {
+      const err = new AppError(
+        'BAD_REQUEST',
+        parsed.error.issues[0]?.message ?? 'Invalid request body',
+      );
+      return reply.status(err.status).send(err.toApiErrorResponse());
+    }
+
+    try {
+      const session = await accountService.startLogin({ saveAs: parsed.data.saveAs });
+      return reply.status(200).send(session);
+    } catch (err) {
+      const appError = AppError.from(err);
+      return reply.status(appError.status).send(appError.toApiErrorResponse());
+    }
+  });
+
+  // GET /api/accounts/login/:loginId
+  app.get<{ Params: { loginId: string } }>(
+    '/api/accounts/login/:loginId',
+    async (request, reply) => {
+      const { loginId } = request.params;
+      if (!loginId) {
+        const err = new AppError('BAD_REQUEST', 'loginId is required');
+        return reply.status(err.status).send(err.toApiErrorResponse());
+      }
+
+      try {
+        const session = accountService.getLoginSession(loginId);
+        return reply.status(200).send(session);
+      } catch (err) {
+        const appError = AppError.from(err);
+        return reply.status(appError.status).send(appError.toApiErrorResponse());
+      }
+    },
+  );
+
+  // POST /api/accounts/login/:loginId/code
+  app.post<{ Params: { loginId: string } }>(
+    '/api/accounts/login/:loginId/code',
+    async (request, reply) => {
+      const parsed = SubmitLoginCodeSchema.safeParse(request.body);
+      if (!parsed.success) {
+        const err = new AppError(
+          'BAD_REQUEST',
+          parsed.error.issues[0]?.message ?? 'Invalid request body',
+        );
+        return reply.status(err.status).send(err.toApiErrorResponse());
+      }
+
+      try {
+        const session = await accountService.submitLoginCode(
+          request.params.loginId,
+          parsed.data.code,
+        );
+        return reply.status(200).send(session);
+      } catch (err) {
+        const appError = AppError.from(err);
+        return reply.status(appError.status).send(appError.toApiErrorResponse());
+      }
+    },
+  );
+
+  // DELETE /api/accounts/login/:loginId
+  app.delete<{ Params: { loginId: string } }>(
+    '/api/accounts/login/:loginId',
+    async (request, reply) => {
+      const { loginId } = request.params;
+      if (!loginId) {
+        const err = new AppError('BAD_REQUEST', 'loginId is required');
+        return reply.status(err.status).send(err.toApiErrorResponse());
+      }
+
+      try {
+        const session = await accountService.cancelLogin(loginId);
+        return reply.status(200).send(session);
+      } catch (err) {
+        const appError = AppError.from(err);
+        return reply.status(appError.status).send(appError.toApiErrorResponse());
+      }
+    },
+  );
+
+  // POST /api/accounts/save
+  app.post('/api/accounts/save', async (request, reply) => {
+    const parsed = SaveAccountSchema.safeParse(request.body);
+    if (!parsed.success) {
+      const err = new AppError(
+        'BAD_REQUEST',
+        parsed.error.issues[0]?.message ?? 'Invalid request body',
+      );
+      return reply.status(err.status).send(err.toApiErrorResponse());
+    }
+
+    try {
+      const account = await accountService.saveAccount(parsed.data);
+      return reply.status(200).send(account);
+    } catch (err) {
+      const appError = AppError.from(err);
+      return reply.status(appError.status).send(appError.toApiErrorResponse());
+    }
+  });
+
+  // POST /api/accounts/switch
+  app.post('/api/accounts/switch', async (request, reply) => {
+    const parsed = SwitchAccountSchema.safeParse(request.body);
+    if (!parsed.success) {
+      const err = new AppError(
+        'BAD_REQUEST',
+        parsed.error.issues[0]?.message ?? 'Invalid request body',
+      );
+      return reply.status(err.status).send(err.toApiErrorResponse());
+    }
+
+    try {
+      const result = await accountService.switchAccount(parsed.data.name);
+      return reply.status(200).send(result);
+    } catch (err) {
+      const appError = AppError.from(err);
+      return reply.status(appError.status).send(appError.toApiErrorResponse());
+    }
+  });
+
+  // DELETE /api/accounts/:name
+  app.delete<{ Params: { name: string } }>(
+    '/api/accounts/:name',
+    async (request, reply) => {
+      const { name } = request.params;
+      if (!name) {
+        const err = new AppError('BAD_REQUEST', 'Account name is required');
+        return reply.status(err.status).send(err.toApiErrorResponse());
+      }
+
+      try {
+        await accountService.deleteAccount(name);
+        return reply.status(200).send({ ok: true });
+      } catch (err) {
+        const appError = AppError.from(err);
+        return reply.status(appError.status).send(appError.toApiErrorResponse());
+      }
+    },
+  );
+};

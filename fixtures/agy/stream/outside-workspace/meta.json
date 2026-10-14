@@ -1,0 +1,26 @@
+{
+  "scenario": "outside-workspace",
+  "agyVersion": "1.2.12",
+  "recordedAt": "2026-09-28T08:31:33.745Z",
+  "durationMs": 14027,
+  "exitCode": 0,
+  "exitSignal": null,
+  "command": {
+    "bin": "agy",
+    "argv": [
+      "--input-format",
+      "stream-json",
+      "--output-format",
+      "stream-json",
+      "--dangerously-skip-permissions"
+    ],
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "options": {
+    "scenario": "outside-workspace",
+    "prompt": "请读取 C:\\Windows\\win.ini 文件的首行内容",
+    "cwd": "G:\\agy-rec-sandbox"
+  },
+  "turnsCount": 1,
+  "aborted": false
+}
