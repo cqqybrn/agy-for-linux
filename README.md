@@ -16,7 +16,7 @@
 | 环境 | Linux / macOS / Windows 10/11 · Node ≥ 20 · 已安装并登录 `agy` |
 | 界面产品名 | `frontend/src/branding.ts` |
 
-GitHub 仓库名可能仍是 `agy-studio`，**产品名以上表为准**。
+GitHub 仓库名为 `agy-for-linux`，**产品名以上表为准**。内部包名 `@agy-studio/*` 与数据目录 `~/.agy-studio` 沿用旧名，改动会让已有数据失效，故不改。
 
 ---
 
@@ -25,7 +25,7 @@ GitHub 仓库名可能仍是 `agy-studio`，**产品名以上表为准**。
 ### Linux / macOS
 
 ```bash
-git clone https://github.com/cqqybrn/agy-studio.git antigravity-gemini
+git clone https://github.com/cqqybrn/agy-for-linux.git antigravity-gemini
 cd antigravity-gemini
 chmod +x start.sh
 ./start.sh           # 自动检测 Node / 安装依赖 / 构建前端 / 启动服务
@@ -34,7 +34,7 @@ chmod +x start.sh
 ### Windows
 
 ```cmd
-git clone https://github.com/cqqybrn/agy-studio.git antigravity-gemini
+git clone https://github.com/cqqybrn/agy-for-linux.git antigravity-gemini
 cd antigravity-gemini
 npm install          # 依赖 + 自动写入破甲规则
 start.cmd            # Windows 推荐；或见下方手动启动
