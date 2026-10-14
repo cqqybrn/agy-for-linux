@@ -16,7 +16,7 @@ import { BrainFs } from './integrations/agy/brain-fs.js';
 import * as TranscriptManager from './integrations/agy/transcript.js';
 import { AgySettings } from './integrations/agy/settings.js';
 import { CredentialStore } from './integrations/agy/credential-store.js';
-import { createDefaultDpapi, type DpapiPort } from './integrations/agy/dpapi.js';
+import { createDefaultDpapi, type DpapiPort } from './integrations/agy/data-protection.js';
 import { LoginTerminal } from './integrations/agy/login-terminal.js';
 import { PtyLoginTerminal, shouldUsePtyLogin } from './integrations/agy/login-pty.js';
 import { RewindTerminal } from './integrations/agy/rewind-terminal.js';

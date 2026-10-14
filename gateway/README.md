@@ -8,4 +8,4 @@ npm install          # 已含破甲安装
 npm run gateway
 ```
 
-日常用浏览器界面请用根目录 `start.cmd`，不必启动本目录。
+日常用浏览器界面请用根目录 `start.sh`（Linux / macOS）或 `start.cmd`（Windows），不必启动本目录。

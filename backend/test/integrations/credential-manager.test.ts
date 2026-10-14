@@ -8,7 +8,7 @@ import {
   buildWinCredInvocation,
   type PowerShellInvocation,
   type PowerShellResult,
-} from '../../src/integrations/agy/wincred.js';
+} from '../../src/integrations/agy/credential-manager.js';
 import { AppError } from '../../src/utils/errors.js';
 
 const SECRET = '{"auth_method":"consumer","token":{"refresh_token":"1//super-secret-refresh"}}';

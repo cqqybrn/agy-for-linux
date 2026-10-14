@@ -30,8 +30,8 @@ import { adapt } from '../backend/src/integrations/agy/stream-adapter.js';
 import { loadProfile } from '../backend/src/integrations/agy/profile/loader.js';
 import { createId } from '../backend/src/utils/ids.js';
 import { killTree } from '../backend/src/utils/proc-tree.js';
-import { MemoryWinCred } from '../backend/src/integrations/agy/wincred.js';
-import { MemoryDpapi } from '../backend/src/integrations/agy/dpapi.js';
+import { MemoryWinCred } from '../backend/src/integrations/agy/credential-manager.js';
+import { MemoryDpapi } from '../backend/src/integrations/agy/data-protection.js';
 import { CredentialStore } from '../backend/src/integrations/agy/credential-store.js';
 
 const __filename = fileURLToPath(import.meta.url);

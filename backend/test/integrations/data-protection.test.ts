@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
-import { WindowsDpapi, MemoryDpapi, PosixCryptoDpapi, dpapi } from '../../src/integrations/agy/dpapi.js';
+import { WindowsDpapi, MemoryDpapi, PosixCryptoDpapi, dpapi } from '../../src/integrations/agy/data-protection.js';
 import { AppError } from '../../src/utils/errors.js';
 
 describe('DPAPI Integration', () => {

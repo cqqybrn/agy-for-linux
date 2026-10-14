@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { AppError } from '../../utils/errors.js';
 import { killTree } from '../../utils/proc-tree.js';
-import { PosixCryptoDpapi, type DpapiPort } from './dpapi.js';
+import { PosixCryptoDpapi, type DpapiPort } from './data-protection.js';
 
 export const CRED_PERSIST_LOCAL_MACHINE = 2;
 

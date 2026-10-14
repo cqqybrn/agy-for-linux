@@ -370,7 +370,7 @@ agy-studio/
 │     │  ├─ profile/{schema,loader}.ts
 │     │  ├─ process.ts · stream-schema.ts · stream-adapter.ts
 │     │  ├─ brain-fs.ts · transcript.ts · settings.ts
-│     │  ├─ credential-store.ts · dpapi.ts
+│     │  ├─ credential-store.ts · data-protection.ts · credential-manager.ts
 │     │  ├─ login-terminal.ts · quota-api.ts · oauth-client.ts
 │     │  ├─ catalog.ts
 │     ├─ repositories/{db,migrations,workspaces,sessions,runs,events,attachments,accounts,quota-cache,prefs}.ts
@@ -574,7 +574,7 @@ git push -u origin main
 
 #### 1.14 凭据快照与账号服务 🔴
 - **前置证据**：VERIFY.md 的 V7（凭据条目名、编码格式、相关文件）必须有本机探测结论，没有就停下
-- **交付物**：`integrations/agy/credential-store.ts` + `dpapi.ts`（按 profile 的条目模式与文件列表做快照、恢复、清空；快照用 DPAPI 加密落盘）；`services/account/account.ts`（账号库、默认账号、§2.6 的租约与切换逻辑、`account.changed` 广播）、`lease-lock.ts`（基于 `utils/rw-lock`，全局一把锁）
+- **交付物**：`integrations/agy/credential-store.ts` + `data-protection.ts`（按 profile 的条目模式与文件列表做快照、恢复、清空；快照用 DPAPI 加密落盘）；`services/account/account.ts`（账号库、默认账号、§2.6 的租约与切换逻辑、`account.changed` 广播）、`lease-lock.ts`（基于 `utils/rw-lock`，全局一把锁）
 - **潜在死穴**：
   - `credential_snapshot` 切换写到一半失败，live 槽位留下残缺凭据 → 先备份当前 live，任一步失败就恢复
   - 运行中的 agy 刷新 token 后写回 live 槽位，覆盖刚切换的账号 → 有读锁时绝不允许写锁
@@ -918,7 +918,7 @@ git push -u origin main
 你是执行工程师。阅读 docs/ARCHITECTURE.md §2.6 账号模型与租约、模块 1.14 的全部潜在死穴，services/ports/credential.port.ts，backend/agy-profile.json 的 credentials 部分，docs/VERIFY.md 的 V7。V7 没有本机探测结论时先停下来告诉我，不要猜条目名或格式。
 任务：
 1. （已删除：home 隔离不在本期实现）
-2. integrations/agy/dpapi.ts：用 Windows DPAPI（CurrentUser 范围）加密与解密 Buffer；非 Windows 平台抛出明确错误
+2. integrations/agy/data-protection.ts：用 Windows DPAPI（CurrentUser 范围）加密与解密 Buffer；非 Windows 平台抛出明确错误
 3. integrations/agy/credential-store.ts：按 profile.credentials 的凭据条目模式（用 @napi-rs/keyring 读写）与凭据文件列表实现 snapshot() / restore(snapshot) / clear() / isPresent()；快照用 dpapi 加密后写入 DATA_DIR/credentials/<name>/
 4. services/account/lease-lock.ts：基于 utils/rw-lock，全局一把锁
 5. services/account/account.ts：list、setDefault、delete、whoami、acquireLease()（返回租约）；switch 流程：tryWrite（失败返回 ACCOUNT_BUSY 或 ACCOUNT_SWITCH_IN_PROGRESS）→ 备份当前 live → restore 目标 → 校验 → 删除备份；任一步失败用备份恢复；运行结束释放租约时，把 live 凭据回写到该账号的快照；成功后 publishGlobal(account.changed)

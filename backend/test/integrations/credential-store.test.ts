@@ -8,8 +8,8 @@ import {
   extractClaimsFromSnapshot,
   parseJwtPayload,
 } from '../../src/integrations/agy/credential-store.js';
-import { MemoryDpapi } from '../../src/integrations/agy/dpapi.js';
-import { MemoryWinCred, type WinCredReadResult } from '../../src/integrations/agy/wincred.js';
+import { MemoryDpapi } from '../../src/integrations/agy/data-protection.js';
+import { MemoryWinCred, type WinCredReadResult } from '../../src/integrations/agy/credential-manager.js';
 import type { CredentialSnapshot } from '../../src/services/ports/credential.port.js';
 import { AppError } from '../../src/utils/errors.js';
 

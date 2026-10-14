@@ -1,9 +1,9 @@
 import { randomBytes } from 'node:crypto';
 import { describe, it, expect, afterAll } from 'vitest';
-import { WindowsCredentialManager, CRED_PERSIST_LOCAL_MACHINE } from '../../src/integrations/agy/wincred.js';
+import { WindowsCredentialManager, CRED_PERSIST_LOCAL_MACHINE } from '../../src/integrations/agy/credential-manager.js';
 
 // Touches the real Windows Credential Manager, so it only runs when explicitly enabled:
-//   $env:AGY_STUDIO_WINCRED_LIVE_TEST = '1'; npm run test -w backend -- wincred.live
+//   $env:AGY_STUDIO_WINCRED_LIVE_TEST = '1'; npm run test -w backend -- credential-manager.windows-live
 // It only ever uses a throwaway "agy-studio-test:<random>" target, never gemini:antigravity.
 const enabled = process.platform === 'win32' && process.env.AGY_STUDIO_WINCRED_LIVE_TEST === '1';
 

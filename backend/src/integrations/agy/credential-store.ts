@@ -8,8 +8,8 @@ import type {
 import type { AgyProfile } from './profile/schema.js';
 import { resolveDataDir } from '../../utils/config.js';
 import { AppError } from '../../utils/errors.js';
-import { dpapi as defaultDpapi, type DpapiPort } from './dpapi.js';
-import { createDefaultCredentialManager, type WinCredPort } from './wincred.js';
+import { dpapi as defaultDpapi, type DpapiPort } from './data-protection.js';
+import { createDefaultCredentialManager, type WinCredPort } from './credential-manager.js';
 import { expandPathTokens } from './paths.js';
 
 export type { IdTokenClaims };

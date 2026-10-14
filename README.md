@@ -88,6 +88,20 @@ WebUI / 网关在每次 run 前多层兜底，避免弹窗卡住：
 | **Linux (`linux`)** | `secret-tool` (libsecret) + `~/.agy-studio/keyring/` 无头兜底 | AES-256-GCM (`~/.agy-studio/master.key`, `0600`) | `gsettings` + 环境变量 |
 | **Windows (`win32`)** | Windows Credential Manager (`Advapi32`) | Windows DPAPI (`CurrentUser`) | 注册表 `Internet Settings` |
 
+凭据读取顺序（Linux / macOS）：系统钥匙串 → `agy` 自己的 token 文件 → Studio 的加密副本。
+
+---
+
+## 4. 无头 Linux 登录（SSH / WSL / 容器）
+
+没有图形界面（没有 `DISPLAY` / `WAYLAND_DISPLAY`）时，WebUI 不会弹终端窗口，而是在后端的伪终端里跑 `agy`：
+
+1. 在登录对话框里点登录，界面会显示 Google 授权链接；
+2. 在任意有浏览器的设备上打开链接并授权；
+3. 把页面给出的授权码粘贴回登录对话框。
+
+用 `AGY_STUDIO_LOGIN_MODE=pty|terminal` 可强制指定登录方式。伪终端优先用 `node-pty`，没编译时回退到系统的 `script`。
+
 ---
 
 ## 仓库怎么看
