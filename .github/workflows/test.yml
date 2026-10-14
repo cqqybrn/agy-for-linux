@@ -1,0 +1,30 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: backend (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck -w backend
+      - run: npm test -w backend
+      # The real macOS Keychain (throwaway keychain, see the test header). Opt-in via the env var.
+      - name: Real Keychain test
+        if: runner.os == 'macOS'
+        env:
+          AGY_STUDIO_MACOS_LIVE_TEST: '1'
+        run: npm run test -w backend -- credential-manager.macos-live

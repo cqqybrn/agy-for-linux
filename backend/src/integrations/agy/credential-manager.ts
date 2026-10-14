@@ -322,6 +322,10 @@ export interface PosixCredentialManagerOptions {
   homeDir?: string;
   /** Encrypts Studio's own fallback copy. Defaults to AES-256-GCM keyed by `<dataDir>/master.key`. */
   crypto?: DpapiPort;
+  /** macOS keychain CLI; overridable so tests can substitute a fake. */
+  securityBin?: string;
+  /** Linux Secret Service CLI; overridable so tests can substitute a fake. */
+  secretToolBin?: string;
 }
 
 /** The live credential slot agy itself uses; only this target maps to agy's own token file. */
@@ -349,6 +353,8 @@ export class PosixCredentialManager implements WinCredPort {
   private readonly disableGeminiFileFallback: boolean;
   private readonly homeDir: string;
   private readonly crypto: DpapiPort;
+  private readonly securityBin: string;
+  private readonly secretToolBin: string;
 
   constructor(options?: PosixCredentialManagerOptions) {
     const baseDir = options?.dataDir ?? path.join(os.homedir(), '.agy-studio');
@@ -359,6 +365,8 @@ export class PosixCredentialManager implements WinCredPort {
     this.homeDir =
       options?.homeDir ?? (process.env.HOME || process.env.USERPROFILE || os.homedir());
     this.crypto = options?.crypto ?? new PosixCryptoDpapi({ dataDir: baseDir });
+    this.securityBin = options?.securityBin ?? '/usr/bin/security';
+    this.secretToolBin = options?.secretToolBin ?? 'secret-tool';
   }
 
   private splitTarget(target: string, defaultAccount = 'antigravity'): { service: string; account: string } {
@@ -422,13 +430,13 @@ export class PosixCredentialManager implements WinCredPort {
         ['find-generic-password', '-s', service, '-a', account, '-w'],
         ['find-generic-password', '-s', target, '-a', account, '-w'],
         ['find-generic-password', '-s', target, '-w'],
-      ].map((args) => ({ bin: '/usr/bin/security', args }));
+      ].map((args) => ({ bin: this.securityBin, args }));
     } else if (this.hasDbus()) {
       commands = [
         ['lookup', 'service', service, 'username', account],
         ['lookup', 'service', target, 'username', account],
         ['lookup', 'target', target],
-      ].map((args) => ({ bin: 'secret-tool', args }));
+      ].map((args) => ({ bin: this.secretToolBin, args }));
     }
     for (const { bin, args } of commands) {
       try {
@@ -554,19 +562,20 @@ export class PosixCredentialManager implements WinCredPort {
     const goKeyringPayload = `${GO_KEYRING_PREFIX}${data.toString('base64')}`;
     let wroteRealStore = false;
 
-    // 1. The OS keyring (best effort: a locked Keychain or missing daemon just means "not written")
+    // 1. The OS keyring (best effort: a locked Keychain or missing daemon just means "not written").
+    //    Uses the same (service, account) pair that read() and delete() look up.
     try {
       if (this.platform === 'darwin') {
         const r = spawnSync(
-          '/usr/bin/security',
-          ['add-generic-password', '-U', '-s', service, '-a', effectiveUser, '-w', goKeyringPayload],
+          this.securityBin,
+          ['add-generic-password', '-U', '-s', service, '-a', account, '-w', goKeyringPayload],
           { encoding: 'utf8', timeout: this.timeoutMs, stdio: ['ignore', 'pipe', 'pipe'] },
         );
         wroteRealStore = r.status === 0;
       } else if (this.hasDbus()) {
         const r = spawnSync(
-          'secret-tool',
-          ['store', `--label=${target}`, 'service', service, 'username', effectiveUser],
+          this.secretToolBin,
+          ['store', `--label=${target}`, 'service', service, 'username', account],
           {
             input: goKeyringPayload,
             encoding: 'utf8',
@@ -657,7 +666,7 @@ export class PosixCredentialManager implements WinCredPort {
         ['delete-generic-password', '-s', target],
       ]) {
         try {
-          const r = spawnSync('/usr/bin/security', args, {
+          const r = spawnSync(this.securityBin, args, {
             encoding: 'utf8',
             timeout: this.timeoutMs,
             stdio: ['ignore', 'pipe', 'pipe'],
@@ -669,7 +678,7 @@ export class PosixCredentialManager implements WinCredPort {
       }
     } else if (this.hasDbus()) {
       try {
-        const r = spawnSync('secret-tool', ['clear', 'service', service, 'username', account], {
+        const r = spawnSync(this.secretToolBin, ['clear', 'service', service, 'username', account], {
           encoding: 'utf8',
           timeout: this.timeoutMs,
           stdio: ['ignore', 'pipe', 'pipe'],
